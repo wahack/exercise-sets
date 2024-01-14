@@ -29,19 +29,27 @@ describe("Owner And BigBank", function () {
     const ONE_GWEI = 1_000_000_000; 
     it("minAmount", async function () {
       const { ownable, bigBank, BigBankDeployer, OwnableDeployer } = await loadFixture(deployOneYearLockFixture);
-      
-      await chai.expect(bigBank.deposite(ONE_GWEI)).to.be.revertedWith(
+      const signers = await ethers.getSigners();
+      await chai.expect(signers[3].sendTransaction({
+        to: bigBank.target,
+        value: ONE_GWEI
+      })).to.be.revertedWith(
         "Not enough ETH sent"
       );
     })
     it("transfer ownership", async function () {
       const { ownable, bigBank, BigBankDeployer, OwnableDeployer } = await loadFixture(deployOneYearLockFixture);
-      await bigBank.deposite(parseEther('10'));
+      // await bigBank.deposite(parseEther('10'));
+      const signers = await ethers.getSigners();
+      await signers[3].sendTransaction({
+        to: bigBank.target,
+        value: parseEther('10')
+      })
       await chai.expect(ownable.withdraw(parseEther('0.2'))).to.be.revertedWith(
         "Not the owner"
       );
-      await chai.expect(bigBank.withdraw(parseEther('0.01'))).to.be.reverted;
-      await bigBank.transferOwner(OwnableDeployer.address);
+      await chai.expect(bigBank.withdraw(parseEther('0.01'))).not.to.be.reverted;
+      await bigBank.transferOwner(ownable.target);
       await chai.expect(bigBank.withdraw(parseEther('0.1'))).to.be.revertedWith(
         "Not the owner"
       );

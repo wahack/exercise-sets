@@ -18,4 +18,6 @@ contract Ownable {
     require(msg.sender == owner, "Not the owner");
     BigBank(bigBankOwner).withdraw(amountOut);
   }
+  receive() external payable {
+  }
 }

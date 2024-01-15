@@ -13,19 +13,22 @@ contract TokenBank {
   address tokenAddress;
   address public erc20TokenAddress;
   address public owner;
+  modifier onlyOwner() {
+    require(msg.sender == owner, 'not the owner');
+    _;
+    
+  }
   constructor (address _erc20TokenAddress){
     erc20TokenAddress = _erc20TokenAddress;
     owner = msg.sender;
   }
   function deposite (uint value) public{
-    // ERC20(erc20TokenAddress).approve(address(this), value);
-    // ERC20(erc20TokenAddress).transferFrom(msg.sender, address(this), value);
-    (bool transformSuccess,) = erc20TokenAddress.call(abi.encodeWithSignature("transferFrom(address,address,uint256)",msg.sender, address(this), value));
-    require(transformSuccess, 'transform failed');
+    // (bool transformSuccess,) = erc20TokenAddress.call(abi.encodeWithSignature("transferFrom(address,address,uint256)",msg.sender, address(this), value));
+    // require(transformSuccess, 'transform failed');
+    ERC20(erc20TokenAddress).transferFrom(msg.sender, address(this), value);
     balanceOf[msg.sender] += value;
   }
-  function withdraw (uint value) public {
-    require(owner == msg.sender, 'not the owner');
+  function withdraw (uint value) onlyOwner public {
     ERC20(erc20TokenAddress).transfer(owner, value);
   }
 

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.0;
+import "hardhat/console.sol";
 
 interface ERC20 {
     function name() external view returns (string memory);
@@ -41,7 +42,7 @@ contract Token is ERC20 {
     uint8 public override decimals;
     uint256 public override totalSupply;
 
-    mapping(address => uint256) public override balanceOf;
+    mapping(address => uint256) public  _balanceOf;
     mapping(address => mapping(address => uint256)) public override allowance;
 
     constructor(
@@ -54,7 +55,7 @@ contract Token is ERC20 {
         symbol = _symbol;
         decimals = _decimals;
         totalSupply = _totalSupply;
-        balanceOf[msg.sender] = _totalSupply;
+        _balanceOf[msg.sender] = _totalSupply;
     }
 
     function transfer(address to, uint256 amount)
@@ -62,9 +63,9 @@ contract Token is ERC20 {
         override
         returns (bool)
     {
-        require(balanceOf[msg.sender] >= amount, "Not enough balance");
-        balanceOf[msg.sender] -= amount;
-        balanceOf[to] += amount;
+        require(_balanceOf[msg.sender] >= amount, "Not enough balance");
+        _balanceOf[msg.sender] -= amount;
+        _balanceOf[to] += amount;
         emit Transfer(msg.sender, to, amount);
         return true;
     }
@@ -75,6 +76,7 @@ contract Token is ERC20 {
         returns (bool)
     {
         allowance[msg.sender][spender] = amount;
+        console.log('approve:', msg.sender, spender, amount);
         return true;
     }
 
@@ -82,13 +84,16 @@ contract Token is ERC20 {
         address from,
         address to,
         uint256 amount
-    ) external override returns (bool) {
-        require(balanceOf[from] >= amount, "Not enough balance");
+    ) external override returns (bool) {        
+        require(_balanceOf[from] >= amount, "Not enough balance");
         require(allowance[from][msg.sender] >= amount, "Not enough allowance");
-        balanceOf[from] -= amount;
-        balanceOf[to] += amount;
-        allowance[from][msg.sender] -= amount;
+        _balanceOf[from] -= amount;
+        _balanceOf[to] += amount;
+        allowance[from][to] -= amount;
         emit Transfer(from, to, amount);
         return true;
+    }
+    function balanceOf(address account) external view override returns (uint256){
+        return _balanceOf[account];
     }
 }

@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 import "hardhat/console.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/utils/Address.sol";
+
+
+interface  onTokenRecived {
+    function tokenRecived(address from, uint256 amount) external returns (bool);
+}
+
 
 interface ERC20 {
     function name() external view returns (string memory);
@@ -36,12 +45,12 @@ interface ERC20 {
     );
 }
 
+
 contract Token is ERC20 {
     string public override name;
     string public override symbol;
     uint8 public override decimals;
     uint256 public override totalSupply;
-
     mapping(address => uint256) public  _balanceOf;
     mapping(address => mapping(address => uint256)) public override allowance;
 
@@ -66,6 +75,9 @@ contract Token is ERC20 {
         require(_balanceOf[msg.sender] >= amount, "Not enough balance");
         _balanceOf[msg.sender] -= amount;
         _balanceOf[to] += amount;
+         if (isContract(to)) {
+            onTokenRecived(to).tokenRecived(msg.sender, amount);
+        }
         emit Transfer(msg.sender, to, amount);
         return true;
     }
@@ -84,9 +96,9 @@ contract Token is ERC20 {
         address from,
         address to,
         uint256 amount
-    ) external override returns (bool) {        
-        require(_balanceOf[from] >= amount, "Not enough balance");
+    ) public override returns (bool) {        
         require(allowance[from][msg.sender] >= amount, "Not enough allowance");
+        require(_balanceOf[from] >= amount, "Not enough balance");
         _balanceOf[from] -= amount;
         _balanceOf[to] += amount;
         allowance[from][to] -= amount;
@@ -95,5 +107,12 @@ contract Token is ERC20 {
     }
     function balanceOf(address account) external view override returns (uint256){
         return _balanceOf[account];
+    }
+    function isContract(address _addr) public view returns (bool) {
+        uint32 size;
+        assembly {
+            size := extcodesize(_addr)
+        }
+        return (size > 0);
     }
 }

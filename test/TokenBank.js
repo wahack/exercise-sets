@@ -38,8 +38,9 @@ describe("TokenBank", function () {
     it("TokenBank 测试，可存可转移token", async function () {
       const {tokenBank, bigBankToken, owner, otherSigners} = await loadFixture(deployOneYearLockFixture);
       await bigBankToken.transfer(otherSigners.address, 10000);
-      bigBankToken.connect(otherSigners).approve(tokenBank.target, 10000);
-      await tokenBank.connect(otherSigners).deposite(1000);
+      // bigBankToken.connect(otherSigners).approve(tokenBank.target, 10000);
+      // await tokenBank.connect(otherSigners).deposite(1000);
+      await bigBankToken.connect(otherSigners).transfer(tokenBank.target, 1000);
       await chai.expect(await bigBankToken.balanceOf(tokenBank.target)).to.be.equal(toBigInt(1000));
       await tokenBank.connect(owner).withdraw(1000);
       await chai.expect(await bigBankToken.balanceOf(tokenBank.target)).to.be.equal(toBigInt(0));

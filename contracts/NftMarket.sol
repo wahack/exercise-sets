@@ -29,7 +29,7 @@ contract NFTMarket {
     owner = msg.sender;
     erc20TokenAddress = _erc20TokenAddress;
   }
-  function buyNFT(uint listingId) external {
+  function buyNFT(uint listingId)  public {
     require(listingId < nftsListed.length, 'not exist');
     NftItemListed memory targetList = nftsListed[listingId];
     Token(erc20TokenAddress).transferFrom(msg.sender, address(this), targetList.price);
@@ -55,5 +55,9 @@ contract NFTMarket {
   }
   function getNftsListed() external view returns (NftItemListed[] memory) {
     return nftsListed;
+  }
+  function onTokenRecived(address from, uint256 amount, bytes memory data) external returns (bool) {
+    buyNFT(abi.decode(data, (uint)));
+    return true;
   }
 }

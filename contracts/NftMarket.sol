@@ -11,38 +11,49 @@ import './Token.sol';
 contract NFTMarket {
   address public owner;
   address public erc20TokenAddress;
-  struct NftItem {
+  struct NftItemListed {
     address seller;
     uint price;
     uint tokenId;
     address nftContract;
   }
-  NftItem[] public nftList;
+  error NotOwner();
+  modifier isOwner(address nftContract, uint tokenId) {
+    if(NFT(nftContract).ownerOf(tokenId) != msg.sender){
+      revert NotOwner();
+    }
+    _;
+  }
+  NftItemListed[] public nftsListed;
   constructor (address _erc20TokenAddress) {
     owner = msg.sender;
     erc20TokenAddress = _erc20TokenAddress;
   }
   function buyNFT(uint listingId) external {
-    require(listingId < nftList.length, 'not exist');
-    NftItem memory targetList = nftList[listingId];
+    require(listingId < nftsListed.length, 'not exist');
+    NftItemListed memory targetList = nftsListed[listingId];
     Token(erc20TokenAddress).transferFrom(msg.sender, address(this), targetList.price);
     NFT(targetList.nftContract).safeTransferFrom(address(this), msg.sender, targetList.tokenId);
     // NFT(nftAddress).transferFrom(msg.sender, owner, _tokenID);
-    delete nftList[listingId];
+    delete nftsListed[listingId];
   }
-  function listNFT (address nftAddress, uint nftTokenId, uint erc20TokenAmount) external  {
-    require(NFT(nftAddress).ownerOf(nftTokenId) == msg.sender, 'not the owner');
+  function listNFT (address nftAddress, uint nftTokenId, uint erc20TokenAmount) isOwner(nftAddress, nftTokenId) external  {
+    require(NFT(nftAddress).getApproved(nftTokenId) == address(this), 'not approved');
     NFT(nftAddress).safeTransferFrom(msg.sender, address(this), nftTokenId);
-    NftItem memory newNftList;
+    NftItemListed memory newNftList;
     newNftList.tokenId = nftTokenId;
     newNftList.seller = msg.sender;
     newNftList.price = erc20TokenAmount;
     newNftList.nftContract = nftAddress;
-    nftList.push(newNftList);
+    nftsListed.push(newNftList);
   }
   function deListNFT (uint listingId) external {
-    NftItem memory targetNftList = nftList[listingId];
+    NftItemListed memory targetNftList = nftsListed[listingId];
+    require(targetNftList.seller == msg.sender, 'not the owner');
     NFT(targetNftList.nftContract).safeTransferFrom(address(this), targetNftList.seller, targetNftList.tokenId);
-    delete nftList[listingId];
+    delete nftsListed[listingId];
+  }
+  function getNftsListed() external view returns (NftItemListed[] memory) {
+    return nftsListed;
   }
 }

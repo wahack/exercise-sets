@@ -10,23 +10,38 @@ import './Token.sol';
 
 contract NFTMarket {
   address public owner;
-  address public nftAddress;
   address public erc20TokenAddress;
-  mapping (uint => uint) nftList; // nft 列表， nftId => price
-  constructor (address _nftAddress, address _erc20TokenAddress) {
+  struct NftItem {
+    address seller;
+    uint price;
+    uint tokenId;
+    address nftContract;
+  }
+  NftItem[] public nftList;
+  constructor (address _erc20TokenAddress) {
     owner = msg.sender;
-    nftAddress = _nftAddress;
     erc20TokenAddress = _erc20TokenAddress;
   }
-  function buyNFT(uint _tokenID, uint _amount) external {
-    require(nftList[_tokenID] <= _amount, 'price not match');
-    Token(erc20TokenAddress).transferFrom(msg.sender, address(this), _amount);
-    NFT(nftAddress).safeTransferFrom(address(this), msg.sender, _tokenID);
+  function buyNFT(uint listingId) external {
+    require(listingId < nftList.length, 'not exist');
+    NftItem memory targetList = nftList[listingId];
+    Token(erc20TokenAddress).transferFrom(msg.sender, address(this), targetList.price);
+    NFT(targetList.nftContract).safeTransferFrom(address(this), msg.sender, targetList.tokenId);
     // NFT(nftAddress).transferFrom(msg.sender, owner, _tokenID);
   }
-  function listNFT (uint nftTokenId, uint erc20TokenAmount) external {
-    // NFT).approve(address(this), erc20TokenAmount);
+  function listNFT (address nftAddress, uint nftTokenId, uint erc20TokenAmount) external  {
+    require(NFT(nftAddress).ownerOf(nftTokenId) == msg.sender, 'not the owner');
     NFT(nftAddress).safeTransferFrom(msg.sender, address(this), nftTokenId);
-    nftList[nftTokenId] = erc20TokenAmount;
+    NftItem memory newNftList;
+    newNftList.tokenId = nftTokenId;
+    newNftList.seller = msg.sender;
+    newNftList.price = erc20TokenAmount;
+    newNftList.nftContract = nftAddress;
+    nftList.push(newNftList);
+  }
+  function deListNFT (uint listingId) external {
+    NftItem memory targetNftList = nftList[listingId];
+    NFT(targetNftList.nftContract).safeTransferFrom(address(this), msg.sender, targetNftList.seller);
+    delete nftList[listingId];
   }
 }

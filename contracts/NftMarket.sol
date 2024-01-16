@@ -28,6 +28,7 @@ contract NFTMarket {
     Token(erc20TokenAddress).transferFrom(msg.sender, address(this), targetList.price);
     NFT(targetList.nftContract).safeTransferFrom(address(this), msg.sender, targetList.tokenId);
     // NFT(nftAddress).transferFrom(msg.sender, owner, _tokenID);
+    delete nftList[listingId];
   }
   function listNFT (address nftAddress, uint nftTokenId, uint erc20TokenAmount) external  {
     require(NFT(nftAddress).ownerOf(nftTokenId) == msg.sender, 'not the owner');
@@ -41,7 +42,7 @@ contract NFTMarket {
   }
   function deListNFT (uint listingId) external {
     NftItem memory targetNftList = nftList[listingId];
-    NFT(targetNftList.nftContract).safeTransferFrom(address(this), msg.sender, targetNftList.seller);
+    NFT(targetNftList.nftContract).safeTransferFrom(address(this), targetNftList.seller, targetNftList.tokenId);
     delete nftList[listingId];
   }
 }

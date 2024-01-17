@@ -60,8 +60,10 @@ contract NFTMarket is IERC721Receiver, onTokenRecived {
         uint256 tokenId,
         bytes calldata data) external returns (bytes4) {
     // buyNFT(from, tokenId);
-    address nftAddress = abi.decode(data, (address));
-    nftWhoLost[nftAddress][from] = tokenId;
+    if (operator != address(this)) {
+      address nftAddress = abi.decode(data, (address));
+      nftWhoLost[nftAddress][from] = tokenId;
+    }
     return IERC721Receiver.onERC721Received.selector;
   }
   function tokenRecived(address buyer, uint amount, bytes calldata data)  external returns(bool) {

@@ -24,7 +24,7 @@ contract NFTMarket is IERC721Receiver, onTokenRecived {
     }
     _;
   }
-  mapping (address => mapping (uint => NftItemListed)) nftsListed;
+  mapping (address => mapping (uint => NftItemListed)) public nftsListed ;
   constructor (address _erc20TokenAddress) {
     owner = msg.sender;
     erc20TokenAddress = _erc20TokenAddress;
@@ -34,19 +34,20 @@ contract NFTMarket is IERC721Receiver, onTokenRecived {
       revert NotList();
     }
     NftItemListed memory targetList = nftsListed[nftAddress][tokenId];
-    Token(erc20TokenAddress).transferFrom(msg.sender, address(this), targetList.price, abi.encode(nftAddress, tokenId ));
+    Token(erc20TokenAddress).transferFromSafe(msg.sender, targetList.seller, targetList.price, abi.encode(nftAddress, tokenId ));
     NFT(nftAddress).safeTransferFrom(address(this), msg.sender, tokenId, abi.encode(nftAddress));
     // NFT(nftAddress).transferFrom(msg.sender, owner, _tokenID);
     delete nftsListed[nftAddress][tokenId];
   }
 
-  function listNFT (address nftAddress, uint nftTokenId, uint erc20TokenAmount) isOwner(nftAddress, nftTokenId) external  {
+  function listNFT (address nftAddress, uint nftTokenId, uint erc20TokenAmount) isOwner(nftAddress, nftTokenId) external returns(bool)  {
     require(NFT(nftAddress).getApproved(nftTokenId) == address(this), 'not approved');
-    NFT(nftAddress).safeTransferFrom(msg.sender, address(this), nftTokenId);
+    NFT(nftAddress).safeTransferFrom(msg.sender, address(this),nftTokenId, abi.encode(nftAddress));
     NftItemListed memory newNftItem;
     newNftItem.seller = msg.sender;
     newNftItem.price = erc20TokenAmount;
     nftsListed[nftAddress][nftTokenId] = newNftItem;
+    return true;
   }
   function deListNFT (address nftAddress, uint tokenId) external {
     NftItemListed memory targetNftList = nftsListed[nftAddress][tokenId];
@@ -68,5 +69,9 @@ contract NFTMarket is IERC721Receiver, onTokenRecived {
     NFT(nftAddress).safeTransferFrom(address(this), buyer, tokenId, abi.encode(nftAddress));
     // NFT(nftAddress).transferFrom(msg.sender, owner, _tokenID);
     delete nftsListed[nftAddress][tokenId];
+    return true;
+  }
+  function getSeller (address nftAddress, uint tokenId) public view returns(address) {
+    return nftsListed[nftAddress][tokenId].seller;
   }
 }

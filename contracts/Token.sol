@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 
 
 interface  onTokenRecived {
-    function tokenRecived(address from, uint256 amount) external returns (bool);
+    function tokenRecived(address from, uint256 amount, bytes calldata data) external returns (bool);
 }
 
 
@@ -24,10 +24,6 @@ interface ERC20 {
 
     function transfer(address to, uint256 amount) external returns (bool);
 
-    function allowance(
-        address owner,
-        address spender
-    ) external view returns (uint256);
 
     function approve(address spender, uint256 amount) external returns (bool);
 
@@ -52,7 +48,7 @@ contract Token is ERC20 {
     uint8 public override decimals;
     uint256 public override totalSupply;
     mapping(address => uint256) public  _balanceOf;
-    mapping(address => mapping(address => uint256)) public override allowance;
+    mapping(address => mapping(address => uint256)) private allowance;
 
     constructor(
         string memory _name,
@@ -67,16 +63,15 @@ contract Token is ERC20 {
         _balanceOf[msg.sender] = _totalSupply;
     }
 
-    function transfer(address to, uint256 amount)
+    function transfer(address to, uint256 amount, bytes calldata data)
         external
-        override
         returns (bool)
     {
         require(_balanceOf[msg.sender] >= amount, "Not enough balance");
         _balanceOf[msg.sender] -= amount;
         _balanceOf[to] += amount;
          if (isContract(to)) {
-            onTokenRecived(to).tokenRecived(msg.sender, amount);
+            onTokenRecived(to).tokenRecived(msg.sender, amount, data);
         }
         emit Transfer(msg.sender, to, amount);
         return true;
@@ -95,13 +90,17 @@ contract Token is ERC20 {
     function transferFrom(
         address from,
         address to,
-        uint256 amount
-    ) public override returns (bool) {        
+        uint256 amount,
+        bytes calldata data
+    ) public returns (bool) {        
         require(allowance[from][msg.sender] >= amount, "Not enough allowance");
         require(_balanceOf[from] >= amount, "Not enough balance");
         _balanceOf[from] -= amount;
         _balanceOf[to] += amount;
         allowance[from][to] -= amount;
+         if (isContract(to)) {
+            onTokenRecived(to).tokenRecived(msg.sender, amount, data);
+        }
         emit Transfer(from, to, amount);
         return true;
     }

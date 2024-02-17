@@ -4,6 +4,7 @@
 // @version    0.0.2
 // @author     ethan
 // @updateURL  https://raw.githubusercontent.com/wahack/exercise-sets/master/backpack.js
+// @downloadURL  https://raw.githubusercontent.com/wahack/exercise-sets/master/backpack.js
 // @match      https://backpack.exchange/*/*
 // @require    https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js
 // @require    https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js

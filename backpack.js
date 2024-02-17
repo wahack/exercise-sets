@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name       backpack-trade
 // @namespace  backpack-trade
-// @version    0.0.1
+// @version    0.0.2
 // @author     ethan
 // @updateURL  https://raw.githubusercontent.com/wahack/exercise-sets/master/backpack.js
 // @match      https://backpack.exchange/*/*
